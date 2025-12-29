@@ -5,5 +5,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: 899961
-    url: jdbc:mysql://mysql:3306/project
+    url: jdbc:mysql://localhost:3306/project
+  jpa:
+    show-sql: true
+    open-in-view: true
+    hibernate:
+      ddl-auto: update
 
+server:
+  port: 8081
