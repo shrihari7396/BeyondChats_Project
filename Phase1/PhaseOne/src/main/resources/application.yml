@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: PhaseOne
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 899961
+    url:
+
