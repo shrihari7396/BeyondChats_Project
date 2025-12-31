@@ -9,6 +9,7 @@ COPY src ./src
 RUN mvn -B -DskipTests clean package
 
 
+
 # ---------- 2. RUNTIME STAGE ----------
 FROM gcr.io/distroless/java21
 
