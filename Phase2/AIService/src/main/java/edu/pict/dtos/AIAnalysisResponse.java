@@ -12,5 +12,5 @@ import lombok.ToString;
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class AIAnalysisResponse {
-    private String htmlReport;   // FULL HTML REPORT
+    private String json;
 }

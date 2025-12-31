@@ -26,16 +26,10 @@ public class OllamaService {
         this.defaultModel = defaultModel;
     }
 
-    /**
-     * Generate text/HTML using default model from application.yml
-     */
     public String generate(String prompt) {
         return generateWithModel(defaultModel, prompt);
     }
 
-    /**
-     * Generate using a specific model
-     */
     @SuppressWarnings("unchecked")
     public String generateWithModel(String model, String prompt) {
 

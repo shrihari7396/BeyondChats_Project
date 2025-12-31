@@ -20,9 +20,9 @@ public class AIController {
     @PostMapping("/analyze")
     public ResponseEntity<?> analyze(@RequestBody AIAnalysisRequest req) {
 
-        String html = aiService.createHTMLReport(req);
+        String json = aiService.createHTMLReport(req);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(AIAnalysisResponse.builder().htmlReport(html).build());
+                .body(AIAnalysisResponse.builder().json(json).build());
     }
 }
