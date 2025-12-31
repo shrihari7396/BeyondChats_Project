@@ -2,18 +2,16 @@ package com.phaseone.service;
 
 import com.phaseone.entity.Article;
 import com.phaseone.repository.ArticleRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ArticleService {
 
     private final ArticleRepository repo;
-
-    public ArticleService(ArticleRepository repo) {
-        this.repo = repo;
-    }
 
     public List<Article> getAll() {
         return repo.findAll();

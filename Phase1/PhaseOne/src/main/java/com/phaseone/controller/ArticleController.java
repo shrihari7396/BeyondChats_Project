@@ -2,6 +2,7 @@ package com.phaseone.controller;
 
 import com.phaseone.entity.Article;
 import com.phaseone.service.ArticleService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -9,13 +10,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/articles")
 @CrossOrigin("*")
+@RequiredArgsConstructor
 public class ArticleController {
 
     private final ArticleService service;
-
-    public ArticleController(ArticleService service) {
-        this.service = service;
-    }
 
     @GetMapping
     public List<Article> getAll() {
