@@ -22,6 +22,11 @@ public class ArticleController {
         return service.save(article);
     }
 
+    @PutMapping("/update")
+    public Article update(@RequestBody Article article) {
+        return service.save(article);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<?> getAll() {
         return ResponseEntity.ok(service.getAll());

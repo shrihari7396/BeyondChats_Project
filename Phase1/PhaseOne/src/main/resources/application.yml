@@ -10,7 +10,7 @@ spring:
     show-sql: true
     open-in-view: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
   output:
     ansi:
       enabled: always
