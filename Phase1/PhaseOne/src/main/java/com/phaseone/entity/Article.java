@@ -18,10 +18,11 @@ public class Article {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
 
-    @Column(unique = true)
-    private String slug;
+    @Column(unique = true, nullable = true)
+    private String slug; // allow NULL, not empty string
 
     @Column(columnDefinition = "LONGTEXT")
     private String content;

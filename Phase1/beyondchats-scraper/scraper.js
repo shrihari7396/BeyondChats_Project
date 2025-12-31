@@ -1,142 +1,152 @@
+/**
+ * FINAL BeyondChats Scraper
+ * Handles tag pages, duplicates & validation
+ */
+
 const axios = require("axios");
 const cheerio = require("cheerio");
+const https = require("https");
 
-// ===============================
-// CONFIG
-// ===============================
-const BLOG_URL = "https://beyondchats.com/blogs/";
+const BLOG_LIST_URL = "https://beyondchats.com/blogs/";
 const API_URL = "http://localhost:8081/api/articles";
+
+const agent = new https.Agent({ keepAlive: true });
+
+const HEADERS = {
+  "User-Agent":
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+  Accept: "text/html",
+};
 
 // ===============================
 // UTILS
 // ===============================
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function generateSlug(title) {
   return title
       .toLowerCase()
       .trim()
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "");
+      .replace(/(^-|-$)/g, "");
+}
+
+function isValidArticleUrl(url) {
+  return (
+      url.startsWith("https://beyondchats.com/blogs/") &&
+      !url.includes("/tag/") &&
+      !url.includes("/category/") &&
+      !url.endsWith("/blogs/")
+  );
+}
+
+function isValidArticle(article) {
+  return (
+      article.title &&
+      article.title.length > 5 &&
+      article.slug &&
+      article.slug.length > 5 &&
+      article.content &&
+      article.content.length > 100
+  );
+}
+
+function generateExcerpt(content, len = 200) {
+  return content.length > len
+      ? content.substring(0, len) + "..."
+      : content;
 }
 
 // ===============================
-// FETCH FULL BLOG CONTENT
+// FETCH ARTICLE LINKS
 // ===============================
-async function fetchFullContent(articleUrl) {
+async function fetchArticleLinks() {
+  const res = await axios.get(BLOG_LIST_URL, {
+    headers: HEADERS,
+    httpsAgent: agent,
+  });
+
+  const $ = cheerio.load(res.data);
+  const links = new Set();
+
+  $("a").each((_, el) => {
+    const href = $(el).attr("href");
+    if (href && isValidArticleUrl(href)) {
+      links.add(href);
+    }
+  });
+
+  return Array.from(links).slice(-5);
+}
+
+// ===============================
+// FETCH FULL ARTICLE
+// ===============================
+async function fetchArticle(url) {
+  const res = await axios.get(url, {
+    headers: HEADERS,
+    httpsAgent: agent,
+  });
+
+  const $ = cheerio.load(res.data);
+
+  const title = $("h1").first().text().trim();
+
+  const content = $(".entry-content")
+      .clone()
+      .find("script, style")
+      .remove()
+      .end()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+
+  return {
+    title,
+    slug: generateSlug(title),
+    content,
+    excerpt: generateExcerpt(content),
+    sourceUrl: url,
+    isUpdated: false,
+  };
+}
+
+// ===============================
+// SAVE TO API
+// ===============================
+async function saveArticle(article) {
   try {
-    const res = await axios.get(articleUrl);
-    const $ = cheerio.load(res.data);
-
-    // ✅ Extract ONLY main article content
-    const content = $(".entry-content")
-        .clone()               // clone to safely modify
-        .find("script, style") // remove unwanted tags
-        .remove()
-        .end()
-        .text()
-        .replace(/\s+/g, " ")
-        .trim();
-
-    return content;
+    const res = await axios.post(API_URL, article);
+    console.log("✅ Saved:", res.data.id, "-", res.data.title);
   } catch (err) {
-    console.error("Failed to fetch full content:", articleUrl);
-    return "";
+    console.error("❌ API rejected:", err.response?.data?.message);
   }
 }
-
 
 // ===============================
 // MAIN
 // ===============================
-async function scrapeAndSaveArticles() {
-  try {
-    const mainRes = await axios.get(BLOG_URL);
-    const $ = cheerio.load(mainRes.data);
+(async function run() {
+  console.log("🚀 Scraper started");
 
-    // Find last page
-    let lastPageUrl = BLOG_URL;
-    $(".pagination a").each((_, el) => {
-      const text = $(el).text().toLowerCase();
-      if (text.includes("last") || text.includes(">>")) {
-        lastPageUrl = $(el).attr("href");
-      }
-    });
+  const links = await fetchArticleLinks();
+  console.log(`🔗 Found ${links.length} valid articles`);
 
-    if (!lastPageUrl.startsWith("http")) {
-      lastPageUrl = "https://beyondchats.com" + lastPageUrl;
+  for (const link of links) {
+    console.log("📄 Scraping:", link);
+
+    const article = await fetchArticle(link);
+
+    if (!isValidArticle(article)) {
+      console.warn("⚠️ Skipped invalid article:", link);
+      continue;
     }
 
-    const lastPageRes = await axios.get(lastPageUrl);
-    const $$ = cheerio.load(lastPageRes.data);
-
-    const articles = [];
-
-    $$("article, .blog-card, .post").each((_, el) => {
-      if (articles.length === 5) return false;
-
-      const title = $$(el).find("h2, h3").first().text().trim();
-      const link = $$(el).find("a").attr("href");
-      const excerpt = $$(el).find("p").first().text().trim();
-
-      if (!title || !link) return;
-
-      const fullUrl = link.startsWith("http")
-          ? link
-          : "https://beyondchats.com" + link;
-
-      articles.push({
-        title,
-        slug: generateSlug(title),
-        excerpt,
-        sourceUrl: fullUrl
-      });
-    });
-
-    // Fetch full content + save
-    let saved = 0;
-
-    for (const art of articles) {
-      const fullContent = await fetchFullContent(art.sourceUrl);
-
-      const payload = {
-        title: art.title,
-        slug: art.slug,
-        excerpt: art.excerpt,
-        content: fullContent,
-        sourceUrl: art.sourceUrl,
-        publishedAt: null,
-        isUpdated: false
-      };
-
-      const ok = await saveArticle(payload);
-      if (ok) saved++;
-    }
-
-    console.log(`✅ ${saved}/5 articles saved with FULL content`);
-  } catch (err) {
-    console.error("❌ Scraping failed:", err.message);
+    await saveArticle(article);
+    await sleep(3000);
   }
-}
 
-// ===============================
-// SAVE API
-// ===============================
-async function saveArticle(article) {
-  try {
-    await axios.post(API_URL, article, {
-      headers: { "Content-Type": "application/json" }
-    });
-    console.log("Saved:", article.title);
-    return true;
-  } catch (err) {
-    console.error(
-        `Failed to save "${article.title}"`,
-        err.response?.data || err.message
-    );
-    return false;
-  }
-}
-
-// ===============================
-// RUN
-// ===============================
-scrapeAndSaveArticles();
+  console.log("🎉 Scraping completed");
+})();

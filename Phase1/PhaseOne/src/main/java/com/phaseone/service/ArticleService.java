@@ -5,36 +5,27 @@ import com.phaseone.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class ArticleService {
 
-    private final ArticleRepository repo;
-
-    public List<Article> getAll() {
-        return repo.findAll();
-    }
-
-    public Article getById(Long id) {
-        return repo.findById(id).orElseThrow();
-    }
+    private final ArticleRepository repository;
 
     public Article save(Article article) {
-        return repo.save(article);
-    }
 
-    public Article update(Long id, Article updated) {
-        Article article = getById(id);
-        article.setTitle(updated.getTitle());
-        article.setContent(updated.getContent());
-        article.setExcerpt(updated.getExcerpt());
-        article.setUpdated(updated.isUpdated());
-        return repo.save(article);
-    }
+        // 🔒 HARD VALIDATION
+        if (article.getTitle() == null || article.getTitle().isBlank()) {
+            throw new RuntimeException("Title cannot be empty");
+        }
 
-    public void delete(Long id) {
-        repo.deleteById(id);
+        if (article.getSlug() == null || article.getSlug().isBlank()) {
+            throw new RuntimeException("Slug cannot be empty");
+        }
+
+        if (repository.existsBySlug(article.getSlug())) {
+            throw new RuntimeException("Article already exists");
+        }
+
+        return repository.save(article);
     }
 }
