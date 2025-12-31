@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
 @RequestMapping("/api/articles")
 @CrossOrigin("*")
@@ -17,12 +16,14 @@ public class ArticleController {
 
     @PostMapping
     public Article create(@RequestBody Article article) {
-        return service.save(article);
+        return service.saveNew(article); // Use specific save for new articles
     }
 
-    @PutMapping("/update")
-    public Article update(@RequestBody Article article) {
-        return service.save(article);
+    // Standard REST update: PUT /api/articles/1
+    @PutMapping("/{id}")
+    public Article update(@PathVariable Long id, @RequestBody Article article) {
+        article.setId(id); // Ensure we update the correct ID
+        return service.updateExisting(article);
     }
 
     @GetMapping("/all")
@@ -34,5 +35,10 @@ public class ArticleController {
     public ResponseEntity<?> deleteById(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.status(HttpStatus.OK).body("Deleted Successfully ...");
+    }
+
+    @GetMapping("/{id}")
+    public Article getById(@PathVariable Long id) {
+        return service.getById(id);
     }
 }

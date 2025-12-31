@@ -17,7 +17,7 @@ public class AIController {
     private final AIService aiService;
 
     @SuppressWarnings("null")
-    @PostMapping("/genrate")
+    @PostMapping("/generate")
     public ResponseEntity<?> analyze(@RequestBody AIAnalysisRequest req) {
 
         String json = aiService.createHTMLReport(req);
