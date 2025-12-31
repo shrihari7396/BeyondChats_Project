@@ -46,7 +46,7 @@ public class OllamaService {
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
-
+            log.info("response {}", response);
             if (response == null || !response.containsKey("response")) {
                 log.error("Ollama returned empty response!");
                 return "<html><body><h2>Error: Empty response from Ollama</h2></body></html>";
@@ -66,13 +66,5 @@ public class OllamaService {
                 </html>
             """.formatted(e.getMessage());
         }
-    }
-
-    /**
-     * System prompt + user prompt version
-     */
-    public String generateWithSystemPrompt(String systemPrompt, String userPrompt) {
-        String finalPrompt = systemPrompt + "\n\n" + userPrompt;
-        return generate(finalPrompt);
     }
 }

@@ -1,6 +1,6 @@
 package edu.pict.controller;
 
-import org.springframework.http.MediaType;
+import  org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,7 +17,7 @@ public class AIController {
     private final AIService aiService;
 
     @SuppressWarnings("null")
-    @PostMapping("/analyze")
+    @PostMapping("/genrate")
     public ResponseEntity<?> analyze(@RequestBody AIAnalysisRequest req) {
 
         String json = aiService.createHTMLReport(req);
